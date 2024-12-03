@@ -29,11 +29,10 @@ namespace Rajapinnat.Model
                 {
                     currentBearish = 0;
                 }
-
             }
             return longestBearish;
-
         }
+
 
         public int BullishTrend(List<Data> data)
         {
@@ -42,7 +41,7 @@ namespace Rajapinnat.Model
 
             for (int i = 1; i < data.Count; i++)
             {
-                if (data[i].Price < data[i - 1].Price)
+                if (data[i].Price > data[i - 1].Price)
                 {
                     currentBullish++;
                     if (currentBullish > longestBullish)
@@ -54,10 +53,9 @@ namespace Rajapinnat.Model
                 {
                     currentBullish = 0;
                 }
-
             }
             return longestBullish;
-
         }
+
     }
 }
