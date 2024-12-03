@@ -37,14 +37,29 @@ namespace Rajapinnat
             var lowestVolume = data.OrderBy(d => d.Volume).First();
             var highestVolume = data.OrderByDescending(d => d.Volume).First();
 
+            //min hinta
             textBox1.Text = $"{lowestPrice.Price}€";
             textBox2.Text = $"{highestPrice.Price}€";
+            //max hinta
             textBox3.Text = $"{highestPrice.Date}";
             textBox4.Text = $"{lowestPrice.Date}";
 
             DrawChart(data);
-            // lblLowestVolume.Text = $"Lowest Volume: {lowestVolume.Volume} on {lowestVolume.Date}";
-            // lblHighestVolume.Text = $"Highest Volume: {highestVolume.Volume} on {highestVolume.Date}";
+            //volyymi min
+             textBox5.Text = $"{lowestVolume.Volume}";
+            textBox7.Text = $"{lowestVolume.Date}";
+            //volyymi max
+            textBox6.Text = $"{highestVolume.Volume}";
+            textBox8.Text = $"{highestVolume.Date}";
+
+            var trend = new Trends();
+            int longestBearish = trend.BearishTrend(data);
+
+            textBox9.Text = $"{longestBearish}";
+
+            var buysell = new BuySell();
+            DateTime bestDayToBuy = buysell.BestDayToBuy(data);
+            textBox14.Text = $"{bestDayToBuy:dd-MM-yyyy-hh-mm}";
         }
 
         private void DrawChart(List<Data> data)
@@ -65,6 +80,7 @@ namespace Rajapinnat
             }
 
             chart1.Invalidate();
+            series.BorderWidth = 1;
         }
 
         private void chart1_MouseMove(object sender, MouseEventArgs e)
