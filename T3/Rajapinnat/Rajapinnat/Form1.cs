@@ -6,12 +6,15 @@ using System.Linq;
 using System.Windows.Forms;
 using static System.Windows.Forms.VisualStyles.VisualStyleElement;
 using System.Windows.Forms.DataVisualization.Charting;
+using System.Drawing;
 
 namespace Rajapinnat
 {
     public partial class Form1 : Form
     {
         private BitcoinController _controller;
+
+
 
         public Form1()
         {
@@ -57,14 +60,34 @@ namespace Rajapinnat
 
             textBox9.Text = $"{longestBearish}";
 
+            int longestBullish = trend.BullishTrend(data);
+            textBox11.Text = $"{longestBullish}";
+
+
             var buysell = new BuySell();
             DateTime bestDayToBuy = buysell.BestDayToBuy(data);
             textBox14.Text = $"{bestDayToBuy:dd-MM-yyyy-hh-mm}";
+
+            DateTime bestDayToSell = buysell.BestDayToSell(data);
+            textBox16.Text = $"{bestDayToSell:dd-MM-yyyy-hh-mm}";
         }
 
         private void DrawChart(List<Data> data)
         {
             chart1.Series.Clear();
+            chart1.ChartAreas.Clear();
+
+            decimal minValue = data.Min(d => d.Price);
+            decimal maxValue = data.Max(d => d.Price);
+
+            var chartArea = new System.Windows.Forms.DataVisualization.Charting.ChartArea
+            {
+                Name = "MainArea",
+                AxisY = { LabelStyle = { Format = "C" }, Minimum = (double)(minValue * 0.95m), Maximum = (double)(maxValue * 1.05m) }
+            };
+
+            chart1.ChartAreas.Add(chartArea);
+
             var series = new System.Windows.Forms.DataVisualization.Charting.Series
             {
                 Name = "Bitcoinin hinta kaavio",
@@ -79,11 +102,32 @@ namespace Rajapinnat
                 series.Points.AddXY(item.Date, item.Price);
             }
 
+            series.BorderWidth = 2;
             chart1.Invalidate();
-            series.BorderWidth = 1;
         }
 
+
         private void chart1_MouseMove(object sender, MouseEventArgs e)
+        {
+            var hit = chart1.HitTest(e.X, e.Y);
+
+            if (hit.ChartElementType == System.Windows.Forms.DataVisualization.Charting.ChartElementType.DataPoint)
+            {
+                var pointIndex = hit.PointIndex;
+                var point = hit.Series.Points[pointIndex];
+                var date = DateTime.FromOADate(point.XValue).ToShortDateString();
+                var price = point.YValues[0].ToString("C");
+
+                toolTip1.Show($"Päivä: {date} Hinta: {price}", chart1, e.Location.X + 10, e.Location.Y + 10);
+            }
+            else
+            {
+                toolTip1.Hide(chart1);
+            }
+        }
+
+
+        private void toolTip1_Popup(object sender, PopupEventArgs e)
         {
 
         }
