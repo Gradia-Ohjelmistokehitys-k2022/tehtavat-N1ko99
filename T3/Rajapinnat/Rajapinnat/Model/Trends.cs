@@ -8,8 +8,6 @@ namespace Rajapinnat.Model
 {
     public class Trends
     {
-        private const string TrendAPI = "https://api.coingecko.com/api/v3/coins/bitcoin/market_chart/range";
-
         public int BearishTrend(List<Data> data)
         {
             int longestBearish = 0;
@@ -30,9 +28,9 @@ namespace Rajapinnat.Model
                     currentBearish = 0;
                 }
             }
+
             return longestBearish;
         }
-
 
         public int BullishTrend(List<Data> data)
         {
@@ -54,8 +52,8 @@ namespace Rajapinnat.Model
                     currentBullish = 0;
                 }
             }
+
             return longestBullish;
         }
-
     }
 }

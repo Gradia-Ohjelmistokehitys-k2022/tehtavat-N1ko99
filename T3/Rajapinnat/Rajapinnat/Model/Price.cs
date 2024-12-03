@@ -25,6 +25,11 @@ namespace Rajapinnat.Model
             request.AddParameter("to", to);
 
             var response = client.Execute(request);
+
+            if (response.StatusCode != System.Net.HttpStatusCode.OK) 
+            {
+                throw new Exception("Liikaa api requesteja."); 
+            }
             var data = JObject.Parse(response.Content);
 
             var prices = data["prices"].ToObject<List<List<object>>>();
