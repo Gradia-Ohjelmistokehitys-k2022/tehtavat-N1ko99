@@ -13,7 +13,7 @@ namespace Rajapinnat.Model
             {
                 var lowestPrice = data.OrderBy(d => d.Price).First();
                 var highestPrice = data.OrderByDescending(d => d.Price).First();
-
+                
                 textBox1.Text = $"{lowestPrice.Price}€";
                 textBox2.Text = $"{highestPrice.Price}€";
                 textBox3.Text = $"{highestPrice.Date}";

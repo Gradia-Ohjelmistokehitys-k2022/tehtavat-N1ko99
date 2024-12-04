@@ -10,80 +10,83 @@ namespace Rajapinnat
     public partial class Form1 : Form
     {
         private BitcoinController _controller;
-        private DataPrice _priceData;
-        private VolumeData _volumeData;
-        private Trends _trends;
-        private BuySell _buySell;
+
         public Form1()
         {
             InitializeComponent();
             _controller = new BitcoinController();
-            _priceData = new DataPrice();
-            _volumeData = new VolumeData();
-            _trends = new Trends();
-            _buySell = new BuySell();
         }
 
         private void button1_Click(object sender, EventArgs e)
         {
             long from = new DateTimeOffset(dateTimePicker1.Value).ToUnixTimeSeconds();
             long to = new DateTimeOffset(dateTimePicker2.Value).ToUnixTimeSeconds();
-            BitcoinController bitcoinController = new BitcoinController();
-            var data = bitcoinController.getBitcoinData(from, to);
-            // Tarkistaa, että aloituspäivämäärä on ennen lopetuspäivämäärää
+
             if (from >= to)
             {
                 MessageBox.Show("Aloituspäivämäärän on oltava ennen lopetuspäivämäärää.");
                 return;
             }
-            // Tarkistaa, että dataa on saatavilla valitulta aikaväliltä
+
+            var data = _controller.GetBitcoinData(from, to);
+
             if (data == null || !data.Any())
             {
                 MessageBox.Show("Ei tietoja valitulta aikaväliltä.");
                 return;
             }
-            // Suodattaa tiedot haetun aikavälin mukaan
-            var filteredData = data.Where(d => d.Date >= dateTimePicker1.Value && d.Date <= dateTimePicker2.Value).ToList();
-            //Näytä Hinta suurin ja pienin
-            _priceData.DisplayPriceData(filteredData, textBox1, textBox2, textBox3, textBox4);
-            //Näytä volyymi tiedot suurin ja pienin
-            _volumeData.DisplayVolumeData(filteredData, textBox5, textBox6, textBox7, textBox8);
-            //näytä trendit bearish bullish
-            DisplayTrends(filteredData);
-            //näytä paras aika ostaa ja myydä
-            DisplayBestBuySellDays(filteredData);
-            //piirrä kaavio
-            DrawChart(filteredData);
+
+            DisplayData(data);
         }
 
-        private void DisplayTrends(List<Data> data)
+        private void DisplayData(List<Data> data)
         {
-            //Lasketaan pisin nousu ja lasku päivinä
-            int longestBearish = _trends.BearishTrend(data);
-            int longestBullish = _trends.BullishTrend(data);
+            // Näytä hinnat ja volyymit
+            var priceVolumeData = _controller.GetPriceVolumeData(data);
+            DisplayPriceVolumeData(priceVolumeData);
 
-            textBox9.Text = $"{longestBearish}";
-            textBox11.Text = $"{longestBullish}";
+            // Näytä trendit
+            var trends = _controller.GetTrends(data);
+            DisplayTrends(trends);
+
+            // Näytä paras ostoaika ja myyntiaika
+            var bestBuySellDays = _controller.GetBestBuySellDays(data);
+            DisplayBestBuySellDays(bestBuySellDays);
+
+            // Piirrä kaavio
+            DrawChart(data);
         }
 
-        private void DisplayBestBuySellDays(List<Data> data)
+        private void DisplayPriceVolumeData((Data lowestPrice, Data highestPrice, Data lowestVolume, Data highestVolume) data)
         {
-            //lasketaan paras aika ostaa ja myyd'
-            DateTime bestDayToBuy = _buySell.BestDayToBuy(data);
-            DateTime bestDayToSell = _buySell.BestDayToSell(data);
+            textBox1.Text = $"{data.lowestPrice.Price}€";
+            textBox2.Text = $"{data.highestPrice.Price}€";
+            textBox3.Text = $"{data.highestPrice.Date}";
+            textBox4.Text = $"{data.lowestPrice.Date}";
 
-            textBox14.Text = $"{bestDayToBuy:dd-MM-yyyy}";
-            textBox10.Text = $"{bestDayToBuy:hh:mm}";
+            textBox5.Text = $"{data.lowestVolume.Volume}";
+            textBox7.Text = $"{data.lowestVolume.Date}";
+            textBox6.Text = $"{data.highestVolume.Volume}";
+            textBox8.Text = $"{data.highestVolume.Date}";
+        }
 
-            textBox16.Text = $"{bestDayToSell:dd-MM-yyyy}";
-            textBox12.Text = $"{bestDayToSell:hh:mm}";
+        private void DisplayTrends((int longestBearish, int longestBullish) trends)
+        {
+            textBox9.Text = $"{trends.longestBearish}";
+            textBox11.Text = $"{trends.longestBullish}";
+        }
 
+        private void DisplayBestBuySellDays((DateTime bestBuy, DateTime bestSell) bestDays)
+        {
+            textBox14.Text = $"{bestDays.bestBuy:dd-MM-yyyy}";
+            textBox10.Text = $"{bestDays.bestBuy:hh:mm}";
 
+            textBox16.Text = $"{bestDays.bestSell:dd-MM-yyyy}";
+            textBox12.Text = $"{bestDays.bestSell:hh:mm}";
         }
 
         private void DrawChart(List<Data> data)
         {
-            //piirretään chartti
             chart1.Series.Clear();
             chart1.ChartAreas.Clear();
 
@@ -94,7 +97,7 @@ namespace Rajapinnat
             {
                 Name = "MainArea",
                 AxisY = { LabelStyle = { Format = "C" }, Minimum = (double)(minValue * 0.95m), Maximum = (double)(maxValue * 1.05m) },
-                AxisX = { MajorGrid = { Enabled = false }}
+                AxisX = { MajorGrid = { Enabled = false } }
             };
 
             chart1.ChartAreas.Add(chartArea);
@@ -113,7 +116,7 @@ namespace Rajapinnat
                 series.Points.AddXY(item.Date, item.Price);
             }
 
-            series.BorderWidth = 2;
+            series.BorderWidth = 1;
             if (chart1.Titles.Count > 0)
             {
                 chart1.Titles[0].Visible = false;
@@ -122,7 +125,7 @@ namespace Rajapinnat
         }
 
         private void chart1_MouseMove(object sender, MouseEventArgs e)
-        {//kun liikutetaan hiirtä chartila näytetään hinta ja päivämäärä sekä aika
+        {
             var hit = chart1.HitTest(e.X, e.Y);
 
             if (hit.ChartElementType == System.Windows.Forms.DataVisualization.Charting.ChartElementType.DataPoint)
@@ -142,6 +145,11 @@ namespace Rajapinnat
 
         private void toolTip1_Popup(object sender, PopupEventArgs e)
         {
+        }
+
+        private void label3_Click(object sender, EventArgs e)
+        {
+
         }
     }
 }

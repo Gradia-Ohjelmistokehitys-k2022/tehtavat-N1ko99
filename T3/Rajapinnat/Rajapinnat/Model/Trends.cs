@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using System.Windows.Forms;
+using Rajapinnat.Model;
 
 namespace Rajapinnat.Model
 {
@@ -29,8 +31,9 @@ namespace Rajapinnat.Model
                 }
             }
 
-            return longestBearish;
+            return longestBearish > 0 ? longestBearish + 1 : longestBearish;
         }
+
 
         public int BullishTrend(List<Data> data)
         {
@@ -53,7 +56,8 @@ namespace Rajapinnat.Model
                 }
             }
 
-            return longestBullish;
+            return longestBullish > 0 ? longestBullish + 1 : longestBullish;
         }
+
     }
 }

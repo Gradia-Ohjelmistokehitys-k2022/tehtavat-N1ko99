@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 namespace Rajapinnat.Model
 {
         public class BuySell
-    {
+        {
             public DateTime BestDayToBuy(List<Data> data)
             {
                 return data.OrderBy(pv => pv.Price).First().Date;
