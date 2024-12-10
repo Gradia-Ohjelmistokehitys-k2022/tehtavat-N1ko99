@@ -8,15 +8,15 @@ namespace Rajapinnat.Model
 {
     public class VolumeData
     {
-            public void DisplayVolumeData(List<Data> data, TextBox textBox5, TextBox textBox6, TextBox textBox7, TextBox textBox8)
+            public (decimal lowestVolume, DateTime lowestVolumeDate, decimal highestVolume, DateTime highestVolumeDate) GetVolumeData(List<Data> data)
             {
+            // Järjestetään data volyymin perusteella nousevaan järjestykseen ja haetaan pienin volyymi                var lowestVolume = data.OrderBy(d => d.Volume).First();
                 var lowestVolume = data.OrderBy(d => d.Volume).First();
+            // Järjestetään data volyymin perusteella laskevaan järjestykseen ja haetaan suurin volyymi
                 var highestVolume = data.OrderByDescending(d => d.Volume).First();
-
-                textBox5.Text = $"{lowestVolume.Volume}";
-                textBox7.Text = $"{lowestVolume.Date}";
-                textBox6.Text = $"{highestVolume.Volume}";
-                textBox8.Text = $"{highestVolume.Date}";
+                //palautetaan
+                return (lowestVolume.Volume, lowestVolume.Date, highestVolume.Volume, highestVolume.Date);
             }
         }
     }
+

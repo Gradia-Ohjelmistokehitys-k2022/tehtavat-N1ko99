@@ -12,7 +12,7 @@ namespace Rajapinnat.Model
             {
                 return data.OrderBy(pv => pv.Price).First().Date;
             }
-
+            
             public DateTime BestDayToSell(List<Data> data)
             {
                 return data.OrderByDescending(pv => pv.Price).First().Date;

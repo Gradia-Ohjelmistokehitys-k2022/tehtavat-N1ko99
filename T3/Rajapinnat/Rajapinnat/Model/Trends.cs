@@ -8,56 +8,112 @@ namespace Rajapinnat.Model
 {
     public class Trends
     {
-        public int BearishTrend(List<Data> data)
-        {
-            int longestBearish = 0;
-            int currentBearish = 0;
+        //public (int days, DateTime? start) BearishTrend(List<Data> data)
+        //{
+        //    int longestBearish = 0;
+        //    int currentBearish = 0;
+        //    DateTime? currentStart = null;
+        //    DateTime? longestStart = null;
 
-            for (int i = 1; i < data.Count; i++)
+        //    for (int i = 1; i < data.Count; i++)
+        //    {
+        //        if (data[i].Price < data[i - 1].Price)
+        //        {
+        //            currentBearish++;
+        //            if (currentBearish == 1)
+        //            {
+        //                currentStart = data[i - 1].Date;
+        //            }
+
+        //            if (currentBearish > longestBearish)
+        //            {
+        //                longestBearish = currentBearish;
+        //                longestStart = currentStart;
+        //            }
+        //        }
+        //        else
+        //        {
+        //            currentBearish = 0;
+        //            currentStart = null;
+        //        }
+        //    }
+
+        //    return longestBearish > 0 ? (longestBearish + 1, longestStart) : (0, null);
+        //}
+
+
+
+        //public int BullishTrend(List<Data> data)
+        //{
+        //    int longestBullish = 0;
+        //    int currentBullish = 1; 
+
+        //    for (int i = 1; i < data.Count; i++)
+        //    {
+        //        if (data[i].Price > data[i - 1].Price)
+        //        {
+        //            currentBullish++; // Jatka nousua
+        //            longestBullish = Math.Max(longestBullish, currentBullish);
+        //        }
+        //        else
+        //        {
+        //            currentBullish = 1; // Nollataan
+        //        }
+        //    }
+
+        //    return longestBullish;
+        //}
+
+
+        public (int length, DateTime? start, DateTime? end) GetLenghtOfTrends(List<Tuple<DateTime, double>> bitcoinPrices, bool isBullish)
+        {
+            // Tarkistetaan ettei lista ole tyhjä ja että siinä on vähintään kaksi elementtiä
+            if (bitcoinPrices == null || bitcoinPrices.Count < 2) return (0, null, null);
+
+            int longestTrend = 0;
+            int currentTrend = 0;
+            DateTime? currentStart = null;
+            DateTime? longestStart = null;
+            DateTime? longestEnd = null;
+
+            // Käydään läpi hinnat
+            for (int i = 1; i < bitcoinPrices.Count; i++)
             {
-                if (data[i].Price < data[i - 1].Price)
+                // Tarkistetaan jatkuuko trendi
+                bool isTrendContinuing = (isBullish && bitcoinPrices[i].Item2 > bitcoinPrices[i - 1].Item2) ||
+                                         (!isBullish && bitcoinPrices[i].Item2 < bitcoinPrices[i - 1].Item2);
+
+                if (isTrendContinuing)
                 {
-                    currentBearish++;
-                    if (currentBearish > longestBearish)
+                    currentTrend++; // Kasvatetaan nykyisen trendin pituutta
+                    if (currentStart == null)
                     {
-                        longestBearish = currentBearish;
+                        currentStart = bitcoinPrices[i - 1].Item1; // Asetetaan nykyisen trendin aloituspäivämäärä
                     }
                 }
                 else
                 {
-                    currentBearish = 0;
-                }
-            }
-
-            // Jos longestBearish on suurempi kuin 0, lisätään 1, koska laskeminen alkaa ensimmäisestä päivästä
-            return longestBearish > 0 ? longestBearish + 1 : longestBearish;
-        }
-
-
-        public int BullishTrend(List<Data> data)
-        {
-            int longestBullish = 0;
-            int currentBullish = 0;
-
-            for (int i = 1; i < data.Count; i++)
-            {
-                if (data[i].Price > data[i - 1].Price)
-                {
-                    currentBullish++;
-                    if (currentBullish > longestBullish)
+                    // Jos nykyinen trendi on pisin päivitetään pisimmän trendin tiedot
+                    if (currentTrend > longestTrend)
                     {
-                        longestBullish = currentBullish;
+                        longestTrend = currentTrend;
+                        longestStart = currentStart;
+                        longestEnd = bitcoinPrices[i - 1].Item1;
                     }
-                }
-                else
-                {
-                    currentBullish = 0;
+                    currentTrend = 0;
+                    currentStart = null;
                 }
             }
 
-            // Jos longestBullish on suurempi kuin 0, lisätään 1, koska laskeminen alkaa ensimmäisestä päivästä
-            return longestBullish > 0 ? longestBullish + 1 : longestBullish;
-        }
+            // Tarkistetaan onko nykyinen trendi pisin trendi
+            if (currentTrend > longestTrend)
+            {
+                longestTrend = currentTrend;
+                longestStart = currentStart;
+                longestEnd = bitcoinPrices[bitcoinPrices.Count - 1].Item1;
+            }
 
+            return (longestTrend, longestStart, longestEnd); // Palautetaan pisimmän trendin pituus ja päivämäärät
+        }
     }
 }

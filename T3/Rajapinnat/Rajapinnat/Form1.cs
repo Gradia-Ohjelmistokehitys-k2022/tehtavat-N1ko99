@@ -21,7 +21,7 @@ namespace Rajapinnat
         {
             long from = new DateTimeOffset(dateTimePicker1.Value).ToUnixTimeSeconds();
             long to = new DateTimeOffset(dateTimePicker2.Value).ToUnixTimeSeconds();
-
+            //tarkistetaan ettei aloituspäivämäärä ole jälkeen lopetuspäivämäärän
             if (from >= to)
             {
                 MessageBox.Show("Aloituspäivämäärän on oltava ennen lopetuspäivämäärää.");
@@ -42,40 +42,52 @@ namespace Rajapinnat
         private void DisplayData(List<Data> data)
         {
             // Näytä hinnat ja volyymit
-            var priceVolumeData = _controller.GetPriceVolumeData(data);
-            DisplayPriceVolumeData(priceVolumeData);
+            DisplayPriceData(data);
+            DisplayVolumeData(data);
 
             // Näytä trendit
-            var trends = _controller.GetTrends(data);
-            DisplayTrends(trends);
+            (int longestBearish, DateTime? bearishStart, DateTime? bearishEnd) = _controller.GetBearishTrend(data);
+            (int longestBullish, DateTime? bullishStart, DateTime? bullishEnd) = _controller.GetBullishTrend(data);
+            DisplayTrends(longestBearish, bearishStart, bearishEnd, longestBullish, bullishStart, bullishEnd);
 
             // Näytä paras ostoaika ja myyntiaika
             var bestBuySellDays = _controller.GetBestBuySellDays(data);
             DisplayBestBuySellDays(bestBuySellDays);
-
             // Piirrä kaavio
             DrawChart(data);
         }
 
-        private void DisplayPriceVolumeData((Data lowestPrice, Data highestPrice, Data lowestVolume, Data highestVolume) data)
+        //asetetaan textboxeihin matalin ja korkein hinta
+        private void DisplayPriceData(List<Data> data)
         {
-            textBox1.Text = $"{data.lowestPrice.Price}€";
-            textBox2.Text = $"{data.highestPrice.Price}€";
-            textBox3.Text = $"{data.highestPrice.Date}";
-            textBox4.Text = $"{data.lowestPrice.Date}";
+            var lowestPrice = data.OrderBy(d => d.Price).First();
+            var highestPrice = data.OrderByDescending(d => d.Price).First();
 
-            textBox5.Text = $"{data.lowestVolume.Volume}";
-            textBox7.Text = $"{data.lowestVolume.Date}";
-            textBox6.Text = $"{data.highestVolume.Volume}";
-            textBox8.Text = $"{data.highestVolume.Date}";
+            textBox1.Text = $"{lowestPrice.Price}";
+            textBox2.Text = $"{highestPrice.Price}";
+            textBox3.Text =  $"{lowestPrice.Date:dd-MM-yyyy}";
+            textBox4.Text = $"{highestPrice.Date:dd-MM-yyyy}";
         }
-
-        private void DisplayTrends((int longestBearish, int longestBullish) trends)
+        //Asetetaan voluumit textboxeihin
+        private void DisplayVolumeData(List<Data> data)
         {
-            textBox9.Text = $"{trends.longestBearish}";
-            textBox11.Text = $"{trends.longestBullish}";
-        }
+            var (lowestVolume, lowestVolumeDate, highestVolume, highestVolumeDate) = _controller.GetVolumeData(data);
 
+            textBox5.Text = $"{lowestVolume}";
+            textBox7.Text = $"{lowestVolumeDate:dd-MM-yyyy}";
+            textBox6.Text = $"{highestVolume}";
+            textBox8.Text = $"{highestVolumeDate:dd-MM-yyyy}";
+        }
+        //asetetaan trendit bearish ja bullish textboxeihin
+        private void DisplayTrends(int longestBearish, DateTime? bearishStart, DateTime? bearishEnd, int longestBullish, DateTime? bullishStart, DateTime? bullishEnd)
+        {
+            textBox9.Text = $"{bearishStart:dd-MM-yyyy}";
+            textBox15.Text = $"{bearishEnd:dd-MM-yyyy}";
+
+            textBox11.Text = $"{bullishStart:dd-MM-yyyy}";
+            textBox13.Text = $"{bullishEnd:dd-MM-yyyy}";
+        }
+        //asetetaan paraspäivä ostaa ja myydä tetboxeihin
         private void DisplayBestBuySellDays((DateTime bestBuy, DateTime bestSell) bestDays)
         {
             textBox14.Text = $"{bestDays.bestBuy:dd-MM-yyyy}";
@@ -87,21 +99,22 @@ namespace Rajapinnat
 
         private void DrawChart(List<Data> data)
         {
+            //tyhjennetään kaavio alueet
             chart1.Series.Clear();
             chart1.ChartAreas.Clear();
-
+            //määritetään minimi ja maksimi arvot hinnalle
             decimal minValue = data.Min(d => d.Price);
             decimal maxValue = data.Max(d => d.Price);
-
+            //luodaan kaavio ja asetetaan asetukset siihen
             var chartArea = new System.Windows.Forms.DataVisualization.Charting.ChartArea
             {
                 Name = "MainArea",
                 AxisY = { LabelStyle = { Format = "C" }, Minimum = (double)(minValue * 0.95m), Maximum = (double)(maxValue * 1.05m) },
                 AxisX = { MajorGrid = { Enabled = false } }
             };
-
+            
             chart1.ChartAreas.Add(chartArea);
-
+            //luodaan sarja
             var series = new System.Windows.Forms.DataVisualization.Charting.Series
             {
                 Name = "Bitcoinin hinta kaavio",
@@ -110,36 +123,39 @@ namespace Rajapinnat
             };
 
             chart1.Series.Add(series);
-
+            //lisätään datapisteet sarjaan
             foreach (var item in data)
             {
                 series.Points.AddXY(item.Date, item.Price);
             }
 
             series.BorderWidth = 1;
+            //piilotetaan otsikko
             if (chart1.Titles.Count > 0)
             {
                 chart1.Titles[0].Visible = false;
             }
+            //päivitetään
             chart1.Invalidate();
         }
 
         private void chart1_MouseMove(object sender, MouseEventArgs e)
         {
             var hit = chart1.HitTest(e.X, e.Y);
-
+           // Tarkistetaan onko hiiri datapisteen päällä
             if (hit.ChartElementType == System.Windows.Forms.DataVisualization.Charting.ChartElementType.DataPoint)
             {
                 var pointIndex = hit.PointIndex;
                 var point = hit.Series.Points[pointIndex];
                 var date = DateTime.FromOADate(point.XValue).ToString("dd-MM-yyyy HH:mm:ss");
                 var price = point.YValues[0].ToString("C");
-
+                //näytetään tooltipissä päivämäärä sekä kello ja hinta
                 toolTip1.Show($"Päivä: {date} Hinta: {price}", chart1, e.Location.X + 10, e.Location.Y + 10);
             }
             else
             {
-                toolTip1.Hide(chart1);
+               // Piilotetaan tooltip kun hiiri ei ole sen päällä
+                 toolTip1.Hide(chart1);
             }
         }
 

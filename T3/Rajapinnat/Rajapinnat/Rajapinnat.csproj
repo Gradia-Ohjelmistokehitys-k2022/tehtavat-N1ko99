@@ -93,7 +93,6 @@
     <Compile Include="Model\Data.cs" />
     <Compile Include="Model\DataPrice.cs" />
     <Compile Include="Model\Price.cs" />
-    <Compile Include="Model\Test.cs" />
     <Compile Include="Model\Trends.cs" />
     <Compile Include="Model\VolumeData.cs" />
     <Compile Include="Program.cs" />
