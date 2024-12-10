@@ -3,8 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Forms;
-using Rajapinnat.Model;
 
 namespace Rajapinnat.Model
 {
@@ -31,6 +29,7 @@ namespace Rajapinnat.Model
                 }
             }
 
+            // Jos longestBearish on suurempi kuin 0, lisätään 1, koska laskeminen alkaa ensimmäisestä päivästä
             return longestBearish > 0 ? longestBearish + 1 : longestBearish;
         }
 
@@ -56,6 +55,7 @@ namespace Rajapinnat.Model
                 }
             }
 
+            // Jos longestBullish on suurempi kuin 0, lisätään 1, koska laskeminen alkaa ensimmäisestä päivästä
             return longestBullish > 0 ? longestBullish + 1 : longestBullish;
         }
 
